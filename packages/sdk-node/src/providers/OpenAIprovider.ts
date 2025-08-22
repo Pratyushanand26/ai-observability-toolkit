@@ -1,3 +1,4 @@
+// providers/OpenAIProvider.ts
 import OpenAI from "openai";
 import * as llm from "../interfaces/llmprovider.js";
 import * as schema from "../interfaces/telemetryevent.js";
@@ -7,6 +8,7 @@ export class OpenAIProvider implements llm.LLMProvider {
   private client: OpenAI;
 
   constructor(apiKey: string) {
+    if (!apiKey) throw new Error("OpenAI API key required!");
     this.client = new OpenAI({ apiKey });
   }
 
@@ -25,27 +27,28 @@ export class OpenAIProvider implements llm.LLMProvider {
 
     const end = Date.now();
 
-    const choice = response.choices[0]?.message?.content ?? "";
+    const choice = response.choices?.[0]?.message?.content ?? "";
 
-    const telemetryResponse: schema.TelemetryEvent = {
+    // build telemetry event (without saving)
+    const telemetryEvent: schema.TelemetryEvent = {
       event_id: crypto.randomUUID(),
       parent_call_id,
       model_name: options?.model ?? "gpt-4o-mini",
       model_version: "2025-08",
       prompt,
       response: choice,
-      input_token_count: String(response.usage?.prompt_tokens ?? 0),
-      output_token_count: String(response.usage?.completion_tokens ?? 0),
-      total_tokens: String(response.usage?.total_tokens ?? 0),
+      input_token_count: response.usage?.prompt_tokens?.toString() ?? "0",
+      output_token_count: response.usage?.completion_tokens?.toString() ?? "0",
+      total_tokens: response.usage?.total_tokens?.toString() ?? "0",
       latency_ms: end - start,
       timestamp: Date.now(),
       detector_signals: {},
       metadata: {
         request_id: response.id,
-        finish_reason: response.choices[0]?.finish_reason,
+        finish_reason: response.choices?.[0]?.finish_reason,
       },
     };
 
-    return telemetryResponse;
+    return telemetryEvent;
   }
 }

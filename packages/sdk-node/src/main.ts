@@ -2,13 +2,16 @@ import { OpenAIProvider } from "./providers/OpenAIprovider.js";
 import { JSONStorage } from "./storage/jsonStorage.js";
 import { TelemetryManager } from "./Telemetrymanager.js";
 
-async function main(filepath:string,apikey:string,prompt:string,parent_call_id?:string){
-    const storage=new JSONStorage(filepath ?? "./telemetry.json")
-    const manager=new TelemetryManager(storage)
-    const provider= new OpenAIProvider(apikey)
-    const event=await provider.callModel(prompt,parent_call_id)
+async function main(prompt: string, apikey: string) {
+  const storage = new JSONStorage("./telemetry.jsonl");
+  const manager = new TelemetryManager(storage, 5000);
+  const provider = new OpenAIProvider(apikey);
 
-    manager.addEvent(event)
-    manager.shutdown()
+  const event = await provider.callModel(prompt);
+  manager.addEvent(event);
 
+  // For a single-shot run
+  await manager.shutdown();
+
+  console.log("Telemetry saved. Event:", event);
 }
