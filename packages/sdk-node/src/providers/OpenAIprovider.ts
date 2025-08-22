@@ -1,7 +1,6 @@
 import OpenAI from "openai";
 import * as llm from "../interfaces/llmprovider.js";
 import * as schema from "../interfaces/telemetryevent.js";
-import { JSONStorage } from "../storage/jsonStorage.js";
 import crypto from "crypto";
 
 export class OpenAIProvider implements llm.LLMProvider {
@@ -14,7 +13,6 @@ export class OpenAIProvider implements llm.LLMProvider {
   async callModel(
     prompt: string,
     parent_call_id: string = "",
-    filepath: string = "telemetry.json",
     options?: Record<string, any>
   ): Promise<schema.TelemetryEvent> {
     const start = Date.now();
@@ -47,9 +45,6 @@ export class OpenAIProvider implements llm.LLMProvider {
         finish_reason: response.choices[0]?.finish_reason,
       },
     };
-
-    const storage = new JSONStorage(filepath);
-    await storage.save(telemetryResponse);
 
     return telemetryResponse;
   }
